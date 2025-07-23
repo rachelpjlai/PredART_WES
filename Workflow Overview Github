@@ -1,0 +1,145 @@
+# STEP 1 - Run PLINK2 to detect variant-level assocation to TB-IRIS with sex and CD4 count as co-variates
+
+plink2 --vcf vep_annotated_deg_variants.vcf.gz \
+       --pheno tb_iris_pheno.fid0.tab.txt --pheno-name PHENOTYPE \
+       --covar tb_iris_pheno.fid0.tab.txt --covar-name CD4 \
+       --update-sex sex_info.fid0.tab.txt \
+       --split-par hg38 \
+       --glm firth-fallback \
+       --out tb_iris_association_results_allchr_CD4
+
+
+
+############################################################################################################
+
+
+
+# STEP 2 - Clean the output files (remove rows without valid p-values, then remove rows belonging to the ChrY)
+
+
+awk -F'\t' 'NR==1 || $16 != "NA"' tb_iris_association_results_allchr_CD4.PHENOTYPE.glm.logistic.hybrid > plink_results_valid_pvalues.tsv
+
+
+awk -F'\t' 'NR == 1 || $1 != "Y"' plink_results_valid_pvalues.tsv > plink_results_valid_pvalues_noY.tsv
+
+
+# Create a file for the TB-IRIS association results (output = 190766 data rows)
+
+awk -F'\t' 'NR == 1 || $11 == "ADD"' plink_results_valid_pvalues_noY.tsv > plink_results_ADD_test.tsv
+
+ 
+# Create a file for the CD4 association results (output = 160762 data rows)
+
+awk -F'\t' 'NR == 1 || $11 == "CD4"' plink_results_valid_pvalues_noY.tsv > plink_results_CD4_test.tsv
+
+
+# Create a Manhattan plot
+
+
+
+############################################################################################################
+
+
+
+# STEP 3 - Map variants to DEG perform genotype counting and annotate snpEff classification
+
+
+Rscript create_final_summary.R
+
+	# Output = final_significant_variants_in_DEGs_with_counts_OR.tsv (1990 rows)
+
+  
+  	# In PLINK2, OR is calculated to the A1 allele. Inspecting this file shows that A1 is the REF allele. Hence a manual curation was done where OR to the alternate allele was calculated (ALT_OR = 1 / REF_OR). The percentage of nonIRIS or TBIRIS subjects with the homologous alternate allele was also calculated. Then snpeff annotation was performed:
+
+
+Rscript add_snpeff_annotations.R
+
+	# Output = final_significant_variants_fully_annotated.tsv
+
+
+
+############################################################################################################
+
+
+
+STEP 4 - Create Forest plot for data visualisation
+
+
+# First we prepare the data to calculate 95% CI and also SE
+
+Rscript prepare_forest_plot.R
+
+
+
+# Upon data inspection, a few of the variants have extreme OR but only from 1 or 2 subjects. Henced I removed a few of the top OR-variants for plotting purpose and the output file = data_for_forest_plot_modified.tsv
+
+
+# Create forest plot that shows the top 20 variants
+
+
+
+############################################################################################################
+
+
+
+STEP 5 - Pathway analysis of the variants and bubble plot for ORA pathway
+
+
+	# Variants were split by OR - Risk variants (OR > 1) or Protective variants (OR < 1)
+
+	# The genes of the risk or protective variants were then used for pathway ORA analysis (https://www.webgestalt.org/) using the Rectome database and RampDB genomics as the background reference set
+
+	# The results were captured in Variant_Pathway_CD4.txt and bubble plot created 
+
+
+
+############################################################################################################
+
+
+
+STEP 6 - Gene-level burden analysis
+
+
+# Performs a gene-based burden analysis to test the association between the cumulative burden of rare variants in genes and a binary phenotype.
+
+# Uses Firth's logistic regression to account for potential separation issues common in rare variant analysis.
+
+
+Rscript gene_burden_analysis_skat_with_scores.R
+
+
+# Create a hybrid volcano plot 
+
+
+
+############################################################################################################
+
+
+
+STEP 7 - Subject-level burden analysis
+
+
+# Count alternate genotype contribute and performs Firth's test
+
+per_subject_score_calculation.R
+
+
+
+
+############################################################################################################
+
+
+
+STEP 8 - GRS calclulation
+
+# Calcuate and plot variant-based top-risk and top-protective GRS and its AUC
+# Perform cross-validation with 10-fold
+
+Rscript GRS_variant_cross_validate.R
+
+
+
+
+
+
+

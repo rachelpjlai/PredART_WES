@@ -1,0 +1,13 @@
+Risk Variants	Enrichment Ratio	p-val
+BCR activation by Ag	8.3281	3.3983E-06
+IFNG signalling 	4.1641	0.000028553
+FCGR-dependent phagocytosis	4.2609	0.000049526
+Neutrophil degranulation	1.9432	0.00059192
+VEGF signalling	3.0845	0.0014854
+		
+Protective Variants	Enrichment Ratio	p-val
+RHO GTPase signalling	2.056	0.000086897
+Heme biosynthesis	8.8763	0.00079254
+Porphyrins metabolism	5.5477	0.0017573
+FCGR3A-mediated IL10 synthesis	4.0253	0.0034353
+MHC-I-mediated Ag processing & presentation	1.8124	0.0036032
